@@ -28,6 +28,13 @@ pix_t processData(pix_t (&lineBuffer)[512][N_BUFFERS], int col, int rdIdx) {
     return lineBuffer[col][rdIdx];
 }
 
+#define COLS 512
+#define ROWS 512
+#define N_BUFFERS 3
+
+typedef ap_axiu<24,1,1,1> pix_t;
+typedef hls::stream<pix_t> pix_s;
+
 void filter (pix_s& axis_src, pix_s& axis_dst) {
     #pragma HLS INTERFACE axis port=axis_src
     #pragma HLS INTERFACE axis port=axis_ds
@@ -47,18 +54,18 @@ void filter (pix_s& axis_src, pix_s& axis_dst) {
         COL_LOOP : for (int j=0; j<COLS; j++) {
             #pragma HLS pipeline II=1
 
-        	// load circular line buffers and convert to grayscale
-        	if (i < ROWS) {
+            // load circular line buffers and convert to grayscale
+            if (i < ROWS) {
                 rdTmp = axis_src.read();
                 rdTmp.data = rgb2gray(rdTmp.data);
                 lineBuffer[j][wrIdx] = rdTmp;
-        	}
+            }
 
-        	// process data once we have enough to work with
-        	if (bufferVld) {
-        	    pixFinal = processData(lineBuffer, j, rdIdx);
-        	    axis_dst.write(pixFinal);
-        	}
+            // process data once we have enough to work with
+            if (bufferVld) {
+                pixFinal = processData(lineBuffer, j, rdIdx);
+                axis_dst.write(pixFinal);
+            }
         }
 
         // circular rd and wr buffer pointers
